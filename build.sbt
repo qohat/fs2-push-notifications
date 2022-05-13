@@ -1,7 +1,7 @@
 import Dependencies._
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-ThisBuild / scalaVersion     := "3.1.2"
+ThisBuild / scalaVersion     := "2.13.8"
 ThisBuild / version          := "1.0.0"
 ThisBuild / organization     := "com.qohat"
 ThisBuild / organizationName := "com.qohat"
