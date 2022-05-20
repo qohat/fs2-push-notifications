@@ -1,9 +1,9 @@
-package com.qohat
+package com.qohat.programs
 
 import cats.data.Kleisli
 import cats.effect._
 import cats.implicits._
-import com.qohat.interpreter.Flow
+import com.qohat.interpreter.{ ConsumerImpl, Flow, PublisherImpl, PushNotification }
 import dev.profunktor.fs2rabbit.config.declaration.DeclarationQueueConfig
 import dev.profunktor.fs2rabbit.interpreter.RabbitClient
 import dev.profunktor.fs2rabbit.model._
@@ -12,7 +12,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-class AckerConsumerDemo[F[_]: Async](R: RabbitClient[F]) {
+class Program[F[_]: Async](R: RabbitClient[F]) {
 
   private val queueName    = QueueName("testQ")
   private val exchangeName = ExchangeName("testEX")
@@ -31,10 +31,13 @@ class AckerConsumerDemo[F[_]: Async](R: RabbitClient[F]) {
       _ <- R.declareQueue(DeclarationQueueConfig.default(queueName))
       _ <- R.declareExchange(exchangeName, ExchangeType.Topic)
       _ <- R.bindQueue(queueName, exchangeName, routingKey)
-      publisher <- R
+      pub <- R
         .createPublisherWithListener[AmqpMessage[String]](exchangeName, routingKey, publishingFlag, publishingListener)
-      ackerConsumer <- R.createAckerConsumer[String](queueName)
-      result = new Flow[F](ackerConsumer._2, ackerConsumer._1, publisher).flow
+      ackerConsumer          <- R.createAckerConsumer[String](queueName)
+      pushNotificationClient <- PushNotification.create[F]
+      consumer               <- ConsumerImpl.create[F](ackerConsumer._2, ackerConsumer._1, pushNotificationClient)
+      publisher              <- PublisherImpl.create[F](pub)
+      result = new Flow[F](consumer, publisher).flow
       _ <- result.compile.drain
     } yield ()
   }

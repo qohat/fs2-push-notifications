@@ -3,6 +3,7 @@ package com.qohat
 import cats.effect._
 import com.qohat.client.Rabbit
 import com.qohat.config.Config
+import com.qohat.programs.AckerConsumerDemo
 import dev.profunktor.fs2rabbit.resiliency.ResilientStream
 
 import scala.concurrent.duration.DurationInt
