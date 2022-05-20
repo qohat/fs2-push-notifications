@@ -1,8 +1,7 @@
 package com.qohat.config
 import cats.data.NonEmptyList
 import dev.profunktor.fs2rabbit.config.{ Fs2RabbitConfig, Fs2RabbitNodeConfig }
-
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 
 class Config(
     override val nodes: NonEmptyList[Fs2RabbitNodeConfig],
@@ -31,3 +30,25 @@ class Config(
       automaticRecovery,
       clientProvidedConnectionName
     )
+
+object Config {
+  val config = new Config(
+    nodes = NonEmptyList.one(
+      Fs2RabbitNodeConfig(
+        host = "127.0.0.1",
+        port = 5672
+      )
+    ),
+    virtualHost = "/",
+    connectionTimeout = 30.seconds,
+    ssl = false,
+    username = Some("guest"),
+    password = Some("guest"),
+    requeueOnNack = false,
+    requeueOnReject = true,
+    internalQueueSize = Some(0),
+    requestedHeartbeat = 30.seconds,
+    automaticRecovery = true,
+    None
+  )
+}
