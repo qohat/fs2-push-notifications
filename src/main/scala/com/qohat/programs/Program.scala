@@ -3,10 +3,12 @@ package com.qohat.programs
 import cats.data.Kleisli
 import cats.effect._
 import cats.implicits._
-import com.qohat.interpreter.{ ConsumerImpl, Flow, PublisherImpl, PushNotification }
+import com.qohat.config.PushNotificationConfig
+import com.qohat.implementations.{ ConsumerImpl, PublisherImpl, PushNotification }
 import dev.profunktor.fs2rabbit.config.declaration.DeclarationQueueConfig
 import dev.profunktor.fs2rabbit.interpreter.RabbitClient
 import dev.profunktor.fs2rabbit.model._
+import fs2.Stream
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -33,11 +35,11 @@ class Program[F[_]: Async](R: RabbitClient[F]) {
       _ <- R.bindQueue(queueName, exchangeName, routingKey)
       pub <- R
         .createPublisherWithListener[AmqpMessage[String]](exchangeName, routingKey, publishingFlag, publishingListener)
-      ackerConsumer          <- R.createAckerConsumer[String](queueName)
-      pushNotificationClient <- PushNotification.create[F]
-      consumer               <- ConsumerImpl.create[F](ackerConsumer._2, ackerConsumer._1, pushNotificationClient)
-      publisher              <- PublisherImpl.create[F](pub)
-      result = new Flow[F](consumer, publisher).flow
+      ackerConsumer <- R.createAckerConsumer[String](queueName)
+      pushNotificationClient = PushNotification.impl[F](PushNotificationConfig("", ""))
+      consumer               = ConsumerImpl.impl[F](ackerConsumer._2, ackerConsumer._1, pushNotificationClient)
+      publisher              = PublisherImpl.impl[F](pub)
+      result                 = Stream(publisher.publish, consumer.consume).parJoin(3)
       _ <- result.compile.drain
     } yield ()
   }
