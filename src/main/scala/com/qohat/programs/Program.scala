@@ -25,7 +25,6 @@ class Program[F[_]: Async](R: RabbitClient[F]) {
   implicit val logger: Logger[F]     = Slf4jLogger.getLogger[F]
   val publishingFlag: PublishingFlag = PublishingFlag(mandatory = true)
 
-  // Run when there's no consumer for the routing key specified by the publisher and the flag mandatory is true
   val publishingListener: PublishReturn => F[Unit] = pr => Sync[F].delay(println(s"Publish listener: $pr"))
 
   val program: F[Unit] = R.createConnectionChannel.use { implicit channel =>
@@ -39,7 +38,7 @@ class Program[F[_]: Async](R: RabbitClient[F]) {
       pushNotificationClient = PushNotification.impl[F](PushNotificationConfig("", ""))
       consumer               = ConsumerImpl.impl[F](ackerConsumer._2, ackerConsumer._1, pushNotificationClient)
       publisher              = PublisherImpl.impl[F](pub)
-      result                 = Stream(publisher.publish, consumer.consume).parJoin(3)
+      result                 = Stream(publisher.publish, consumer.consume).parJoin(2)
       _ <- result.compile.drain
     } yield ()
   }
