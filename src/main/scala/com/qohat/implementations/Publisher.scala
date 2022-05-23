@@ -33,6 +33,6 @@ object PublisherImpl {
           Stream(simpleMessage).covary[F].evalMap(publisher),
           Stream(classMessage).covary[F].through(personEncoderPipe).evalMap(publisher),
           Stream(notificationMessage).covary[F].through(notificationEncoderPipe).evalMap(publisher)
-        ).parJoin(2)
+        ).parJoin(3)
     }
 }
