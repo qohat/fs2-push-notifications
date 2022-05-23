@@ -32,13 +32,12 @@ object ConsumerImpl {
                 .covary[F]
                 .flatMap(notificationClient.push)
                 .as(Ack(tag))
-                .evalMap(acker)
             case (Left(e), tag) =>
               Stream(e)
                 .covary[F]
                 .through(errorPipe)
                 .as(NAck(tag))
-                .evalMap(acker)
           }
+          .evalMap(acker)
     }
 }
